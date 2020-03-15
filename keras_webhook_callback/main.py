@@ -111,9 +111,9 @@ class TelegramCallback(ParentCallback):
 
     def send_message(self, message, type='text'):
         if type == 'text':
-            response = self.bot.send_message(self.chat_id, message, parse_mode='Markdown')
+            self.bot.send_message(self.chat_id, message, parse_mode='Markdown')
         elif type == 'image':
-            response = self.bot.send_photo(self.chat_id, photo=message)
+            self.bot.send_photo(self.chat_id, photo=message)
 
 
 class SlackCallback(ParentCallback):
