@@ -23,21 +23,27 @@ class ParentCallback(keras.callbacks.Callback):
         self.logs_arr = []
         self.start, self.stop = None, None
 
+    def send_message(self,*args, **kwargs):
+        '''
+        To be overwritten by the children classes
+        '''
+        pass
+        
     def on_train_begin(self, logs=None):
         text = '='*50+'\n'
         now = datetime.datetime.now()
-        text += "Hi! your model `{:}` has started training at {:%H:%M:%S}".format(self.model_name,now)
+        text += "Hi! your model `{:}` has started training at {:%H:%M:%S}.".format(self.model_name,now)
         self.send_message(text)
         self.start = now
 
     def on_train_end(self, logs=None):
         now = datetime.datetime.now()
-        text = "Your model `{:}` has finished training at {:%H:%M:%S}".format(self.model_name,now)
+        text = "Your model `{:}` has finished training at {:%H:%M:%S}.".format(self.model_name,now)
         
         self.stop = now
         delta = humanize.naturaldelta(self.stop-self.start)
 
-        text += 'Training took {:}'.format(delta)
+        text += '\tTraining took {:}.'.format(delta)
         self.send_message(text)
 
         if self.get_summary:
@@ -88,12 +94,12 @@ class ParentCallback(keras.callbacks.Callback):
 class TelegramCallback(ParentCallback):
 
     def __init__(self,
-                 bot_token = None,
-                 chat_id = None,
-                 model_name = 'model',
-                 loss_metrics = ['loss'],
-                 acc_metrics = [],
-                 get_summary=False):
+                    bot_token = None,
+                    chat_id = None,
+                    model_name = 'model',
+                    loss_metrics = ['loss'],
+                    acc_metrics = [],
+                    get_summary=False):
         ParentCallback.__init__(self,
                                 model_name,
                                 loss_metrics,
@@ -113,12 +119,12 @@ class TelegramCallback(ParentCallback):
 class SlackCallback(ParentCallback):
 
     def __init__(self,
-                 webhook_url = None,
-                 channel = None,
-                 model_name = 'model',
-                 loss_metrics = ['loss'],
-                 acc_metrics = [],
-                 get_summary=False):
+                    webhook_url = None,
+                    channel = None,
+                    model_name = 'model',
+                    loss_metrics = ['loss'],
+                    acc_metrics = [],
+                    get_summary=False):
         ParentCallback.__init__(self, 
                                 model_name,
                                 loss_metrics, 
