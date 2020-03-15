@@ -1,3 +1,4 @@
+import datetime, humanize
 import requests
 import keras
 import telegram
@@ -9,37 +10,44 @@ from io import BytesIO
 class ParentCallback(keras.callbacks.Callback):
 
     def __init__(self,
-                 modelName = 'model',
-                 loss_metrics = ['loss'],
-                 acc_metrics = [],
-                 getSummary = False,
-                 app=None):
-        self.modelName = modelName
+                    model_name = 'model',
+                    loss_metrics = ['loss'],
+                    acc_metrics = [],
+                    get_summary = False,
+                    app=None):
+        self.model_name = model_name
         self.loss_metrics = loss_metrics
         self.acc_metrics = acc_metrics
-        self.getSummary = getSummary
+        self.get_summary = get_summary
         self.app = app
         self.logs_arr = []
+        self.start, self.stop = None, None
 
     def on_train_begin(self, logs=None):
-        text = f"Hi! your *{self.modelName}* training has started."
+        now = datetime.datetime.now()
+        text = "Hi! your *{:}* has started training on {:%Y-%m-%d %H:%M}".format(self.model_name,now)
         self.send_message(text)
+        self.start = now
 
     def on_train_end(self, logs=None):
-        text = f"Your *{self.modelName}* has finished training."
+        now = datetime.datetime.now()
+        text = "Your *{:}* has finished training on {:%Y-%m-%d %H:%M}".format(self.model_name,now)
         self.send_message(text)
+        self.stop = now
+
+        delta = humanize.naturaldelta(self.stop-self.start)
+        self.send_message('Training took {:}'.format(delta))
         
-        if self.getSummary:
+        if self.get_summary:
             summary = self.make_summary(self.logs_arr)
             self.send_message(summary)
 
         if self.app in ['slack']:
             return
     
-        if len(self.loss_metrics)>0:
+        if self.loss_metrics:
             for metric in self.loss_metrics:
-                plt.plot([epoch[metric] for epoch in self.logs_arr],
-                         label=f'{metric}')
+                plt.plot([epoch[metric] for epoch in self.logs_arr],label=f'{metric}')
                 plt.legend()
         
         out = BytesIO()
@@ -48,10 +56,9 @@ class ParentCallback(keras.callbacks.Callback):
         self.send_message(out, type='image')
         plt.clf()
 
-        if len(self.acc_metrics)>0:
+        if self.acc_metrics:
             for metric in self.acc_metrics:
-                plt.plot([epoch[metric] for epoch in self.logs_arr],
-                         label=f'{metric}')
+                plt.plot([epoch[metric] for epoch in self.logs_arr], label=f'{metric}')
                 plt.legend()
         
         out = BytesIO()
@@ -61,10 +68,10 @@ class ParentCallback(keras.callbacks.Callback):
 
     def on_epoch_end(self, epoch, logs=None):
         self.logs_arr.append(logs)
-        if not self.getSummary:
+        if not self.get_summary:
             text = f'*Epoch*: {epoch}\n'
             for key, value in logs.items():
-                text += f'*{key}*: {value:.2f}\n'
+                text += f'*{key}*: {value:.2f}\t | \t'
             self.send_message(text, type='text') 
 
     def make_summary(self, logs_arr):
@@ -81,15 +88,15 @@ class TelegramCallback(ParentCallback):
     def __init__(self,
                  bot_token = None,
                  chat_id = None,
-                 modelName = 'model',
+                 model_name = 'model',
                  loss_metrics = ['loss'],
                  acc_metrics = [],
-                 getSummary=False):
+                 get_summary=False):
         ParentCallback.__init__(self,
-                                modelName,
+                                model_name,
                                 loss_metrics,
                                 acc_metrics,
-                                getSummary,
+                                get_summary,
                                 app='telegram')
         self.bot = telegram.Bot(token=bot_token)
         self.chat_id = chat_id
@@ -106,15 +113,15 @@ class SlackCallback(ParentCallback):
     def __init__(self,
                  webhookURL = None,
                  channel = None,
-                 modelName = 'model',
+                 model_name = 'model',
                  loss_metrics = ['loss'],
                  acc_metrics = [],
-                 getSummary=False):
+                 get_summary=False):
         ParentCallback.__init__(self, 
-                                modelName,
+                                model_name,
                                 loss_metrics, 
                                 acc_metrics, 
-                                getSummary,
+                                get_summary,
                                 app='slack')
         self.webhookURL = webhookURL
         self.channel = channel
