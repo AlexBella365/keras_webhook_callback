@@ -24,20 +24,22 @@ class ParentCallback(keras.callbacks.Callback):
         self.start, self.stop = None, None
 
     def on_train_begin(self, logs=None):
+        text = '='*50+'\n'
         now = datetime.datetime.now()
-        text = "Hi! your *{:}* has started training on {:%Y-%m-%d %H:%M}".format(self.model_name,now)
+        text += "Hi! your model `{:}` has started training at {:%H:%M:%S}".format(self.model_name,now)
         self.send_message(text)
         self.start = now
 
     def on_train_end(self, logs=None):
         now = datetime.datetime.now()
-        text = "Your *{:}* has finished training on {:%Y-%m-%d %H:%M}".format(self.model_name,now)
-        self.send_message(text)
-        self.stop = now
-
-        delta = humanize.naturaldelta(self.stop-self.start)
-        self.send_message('Training took {:}'.format(delta))
+        text = "Your model `{:}` has finished training at {:%H:%M:%S}".format(self.model_name,now)
         
+        self.stop = now
+        delta = humanize.naturaldelta(self.stop-self.start)
+
+        text += 'Training took {:}'.format(delta)
+        self.send_message(text)
+
         if self.get_summary:
             summary = self.make_summary(self.logs_arr)
             self.send_message(summary)
@@ -69,9 +71,9 @@ class ParentCallback(keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs=None):
         self.logs_arr.append(logs)
         if not self.get_summary:
-            text = f'*Epoch*: {epoch}\n'
+            text = f'*Epoch* {epoch}'
             for key, value in logs.items():
-                text += f'*{key}*: {value:.2f}\t | \t'
+                text += f'\t | \t*{key}*: {value:.3f}'
             self.send_message(text, type='text') 
 
     def make_summary(self, logs_arr):
@@ -79,7 +81,7 @@ class ParentCallback(keras.callbacks.Callback):
         for epoch, log in enumerate(logs_arr):
             summary += f'\n*Epoch*: {epoch+1}\n'
             for key, value in log.items():
-                summary += f'*{key}*: {value:.2f}\n'
+                summary += f'*{key}*: {value:.3f}\n'
         return summary
 
 
@@ -111,7 +113,7 @@ class TelegramCallback(ParentCallback):
 class SlackCallback(ParentCallback):
 
     def __init__(self,
-                 webhookURL = None,
+                 webhook_url = None,
                  channel = None,
                  model_name = 'model',
                  loss_metrics = ['loss'],
@@ -123,7 +125,7 @@ class SlackCallback(ParentCallback):
                                 acc_metrics, 
                                 get_summary,
                                 app='slack')
-        self.webhookURL = webhookURL
+        self.webhook_url = webhook_url
         self.channel = channel
 
     def send_message(self, message, type='text'):
@@ -132,6 +134,6 @@ class SlackCallback(ParentCallback):
                 'channel': self.channel,
                 'text': message
             }
-            response = requests.post(self.webhookURL, json=payload)
+            response = requests.post(self.webhook_url, json=payload)
         elif type == 'image':
             response = self.bot.send_photo(self.chat_id, photo=message)
