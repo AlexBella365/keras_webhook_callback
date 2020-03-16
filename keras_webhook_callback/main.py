@@ -21,7 +21,7 @@ class ParentCallback(keras.callbacks.Callback):
         self.get_summary = get_summary
         self.app = app
         self.logs_arr = []
-        self.start, self.stop = None, None
+        self.times = {}
 
     def send_message(self,*args, **kwargs):
         '''
@@ -30,20 +30,20 @@ class ParentCallback(keras.callbacks.Callback):
         pass
         
     def on_train_begin(self, logs=None):
-        text = '='*50+'\n'
+        text = '_'*30+'\n'
         now = datetime.datetime.now()
         text += "Hi! your model `{:}` has started training at {:%H:%M:%S}.".format(self.model_name,now)
         self.send_message(text)
-        self.start = now
+        self.times['training_start'] = now
 
     def on_train_end(self, logs=None):
         now = datetime.datetime.now()
         text = "Your model `{:}` has finished training at {:%H:%M:%S}.".format(self.model_name,now)
         
-        self.stop = now
-        delta = humanize.naturaldelta(self.stop-self.start)
+        self.times['training_stop'] = now
+        delta = humanize.naturaldelta(self.times['training_stop']-self.times['training_start'])
 
-        text += '\tTraining took {:}.'.format(delta)
+        text += ' Training took {:}.'.format(delta)
         self.send_message(text)
 
         if self.get_summary:
@@ -74,12 +74,19 @@ class ParentCallback(keras.callbacks.Callback):
         out.seek(0)
         self.send_message(out, type='image')
 
+    def on_epoch_begin(self, epoch, logs=None):
+        self.times['epoch_start'] = datetime.datetime.now()
+    
     def on_epoch_end(self, epoch, logs=None):
         self.logs_arr.append(logs)
+        self.times['epoch_stop'] = datetime.datetime.now()
+
         if not self.get_summary:
+            delta = humanize.naturaldelta(self.times['epoch_stop'] - self.times['epoch_start'])
             text = f'*Epoch* {epoch}'
             for key, value in logs.items():
-                text += f'\t | \t*{key}*: {value:.3f}'
+                text += f' | *{key}*: {value:.3f}'
+            text += f' | (time elapsed: {delta})'
             self.send_message(text, type='text') 
 
     def make_summary(self, logs_arr):
@@ -140,6 +147,6 @@ class SlackCallback(ParentCallback):
                 'channel': self.channel,
                 'text': message
             }
-            response = requests.post(self.webhook_url, json=payload)
+            requests.post(self.webhook_url, json=payload)
         elif type == 'image':
-            response = self.bot.send_photo(self.chat_id, photo=message)
+            self.bot.send_photo(self.chat_id, photo=message)

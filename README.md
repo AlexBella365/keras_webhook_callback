@@ -1,17 +1,15 @@
-# TensorFlow Notification Callback
+# Keras Notification Callback
 
-[![forthebadge made-with-python](http://ForTheBadge.com/images/badges/made-with-python.svg)](https://www.python.org/)
+[![PyPI version](https://badge.fury.io/py/keras-webhook-callback.svg)](https://badge.fury.io/py/keras-webhook-callback)
 
-[![PyPI version](https://badge.fury.io/py/tf-notification-callback.svg)](https://badge.fury.io/py/tf-notification-callback)
-
-A Tensorflow/Keras callback which sends information about your model training, on various messaging platforms.
+A Keras callback which sends information about your model training, on various messaging platforms.
 
 ## Installation
 
 Using `pip`:
 
 ```bash
-pip install tf_notification_callback
+pip install keras-webhook-callback
 ```
 
 ## Usage
@@ -21,7 +19,7 @@ Import the required module and add it to the list callbacks while training your 
 **Example:**
 
 ```python
->>> from tf_notification_callback import TelegramCallback
+>>> from keras_webhook_callback import TelegramCallback
 >>> telegram_callback = TelegramCallback('<BotToken>',
                                          '<ChatID>',
 	                                 'CNN Model',
