@@ -30,9 +30,9 @@ class ParentCallback(keras.callbacks.Callback):
         pass
         
     def on_train_begin(self, logs=None):
-        text = '_'*30+'\n'
+        text = '*'*30+'\n'
         now = datetime.datetime.now()
-        text += "Hi! your model `{:}` has started training at {:%H:%M:%S}.".format(self.model_name,now)
+        text += "Keras model `{:}` has started training at {:%H:%M:%S}.".format(self.model_name,now)
         self.send_message(text)
         self.times['training_start'] = now
 
@@ -83,10 +83,9 @@ class ParentCallback(keras.callbacks.Callback):
 
         if not self.get_summary:
             delta = humanize.naturaldelta(self.times['epoch_stop'] - self.times['epoch_start'])
-            text = f'*Epoch* {epoch}'
+            text = f'*Epoch* {epoch:0>3} (time elapsed: {delta})\n'
             for key, value in logs.items():
-                text += f' | *{key}*: {value:.3f}'
-            text += f' | (time elapsed: {delta})'
+                text += f'\t| *{key:10}*: {value:.3f}\n'
             self.send_message(text, type='text') 
 
     def make_summary(self, logs_arr):
